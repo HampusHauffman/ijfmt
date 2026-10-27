@@ -1,0 +1,5 @@
+* text=auto
+*.sh text eol=lf
+dist/bin/ijfmt text eol=lf
+*.cmd text eol=crlf
+gradlew text eol=lf

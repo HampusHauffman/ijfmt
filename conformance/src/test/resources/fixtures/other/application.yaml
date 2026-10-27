@@ -1,0 +1,9 @@
+server:
+    port: 8080
+    servlet:
+          context-path: /api
+spring:
+  datasource:
+     url: jdbc:postgresql://localhost/app
+     username:   app
+  profiles: [dev,  test]

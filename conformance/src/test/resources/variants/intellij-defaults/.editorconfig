@@ -1,0 +1,2 @@
+# Factory defaults: nothing but a root marker, so no .editorconfig above the work dir leaks in.
+root = true

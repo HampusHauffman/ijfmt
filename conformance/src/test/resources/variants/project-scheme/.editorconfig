@@ -1,0 +1,6 @@
+# .editorconfig on top of a per-project scheme (.idea/codeStyles): IntelliJ layers it over the scheme.
+root = true
+
+[*.java]
+ij_java_space_before_method_call_parentheses = true
+ij_java_blank_lines_after_class_header = 1

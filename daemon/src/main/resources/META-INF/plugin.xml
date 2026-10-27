@@ -1,0 +1,15 @@
+<idea-plugin>
+  <id>dev.ijfmt.daemon</id>
+  <name>ijfmt daemon</name>
+  <version>${version}</version>
+  <vendor>ijfmt</vendor>
+  <description>Headless IntelliJ formatter server used by the ijfmt command line client. Not meant to be installed into an IDE.</description>
+  <idea-version since-build="${sinceBuild}"/>
+
+  <depends>com.intellij.modules.platform</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <appStarter id="ijfmt-server" implementation="dev.ijfmt.daemon.IjfmtServerStarter"/>
+    <fileDocumentSynchronizationVetoer implementation="dev.ijfmt.daemon.SaveGuard"/>
+  </extensions>
+</idea-plugin>
