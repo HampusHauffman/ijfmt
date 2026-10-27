@@ -63,42 +63,55 @@ build it runs on (`ijfmt daemon status` shows it).
 
 ## Neovim
 
-With [lazy.nvim](https://github.com/folke/lazy.nvim), pointing at the installed distribution:
+The repository is a Neovim plugin that builds itself. With [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-  dir = vim.fn.expand("~/.ijfmt/nvim"),
+  "<you>/<repo>",                 -- this repository
   name = "ijfmt",
-  config = function()
-    require("ijfmt").setup({
-      -- Start the daemon when one of these is opened, so the first format is instant (default shown).
-      prestart_filetypes = { "java", "kotlin", "groovy" },
-      -- Let ijfmt format these on :w itself (leave empty if you use conform.nvim, below).
-      format_on_save = { "java" },
-    })
-  end,
+  main = "ijfmt",
+  build = function() require("ijfmt.build").run() end,  -- runs `gradlew installDist` inside the plugin dir
+  ft = { "java", "kotlin", "groovy" },
+  opts = {
+    -- Start the daemon when one of these is opened, so the first format is instant (default shown).
+    prestart_filetypes = { "java", "kotlin", "groovy" },
+    -- Let ijfmt format these on :w itself (leave empty if you use conform.nvim, below).
+    format_on_save = { "java", "kotlin" },
+  },
 }
 ```
 
-Commands: `:IjfmtFormat` (also with a range: `:'<,'>IjfmtFormat`), `:IjfmtStatus`, `:IjfmtRestart`, `:IjfmtLog`.
+That's all: no separate install, no PATH changes. The build hook needs a JDK for Gradle; it uses `$JAVA_HOME` or, if
+unset, the runtime bundled with your IntelliJ IDEA. The first build takes about a minute; it reruns on every plugin
+update (`:IjfmtBuild` rebuilds manually, and a running daemon is replaced automatically).
+
+Commands: `:IjfmtFormat` (also with a range: `:'<,'>IjfmtFormat`), `:IjfmtStatus`, `:IjfmtRestart`, `:IjfmtLog`,
+`:IjfmtBuild`.
+
+Other plugin managers: add the repository, then run `:lua require("ijfmt.build").run()` once after install/update and
+call `require("ijfmt").setup({...})`. If you installed the CLI with `./gradlew install`, you can also point a plugin
+manager at that directory (`dir = "~/.ijfmt"`) and skip the build hook.
 
 ### With conform.nvim
 
 The adapter talks to the daemon directly (no process spawn per format):
 
 ```lua
-require("conform").setup({
-  formatters = { ijfmt = require("ijfmt.conform") },
-  formatters_by_ft = { java = { "ijfmt" }, kotlin = { "ijfmt" } },
-  format_on_save = { timeout_ms = 2000 },
-})
+{
+  "stevearc/conform.nvim",
+  opts = {
+    formatters = { ijfmt = function() return require("ijfmt.conform") end },
+    formatters_by_ft = { java = { "ijfmt" }, kotlin = { "ijfmt" } },
+    format_on_save = { timeout_ms = 2000 },
+  },
+}
 ```
 
-Keep `require("ijfmt").setup()` (with an empty `format_on_save`) for the daemon prestart and the commands. Prefer the
+Keep the ijfmt spec above (with `format_on_save = {}`) for the build hook, daemon prestart and commands. Prefer the
 CLI instead? It works as a plain stdin formatter too:
 `formatters = { ijfmt = { command = "ijfmt", args = { "--stdin-filepath", "$FILENAME" }, stdin = true } }`.
 
-Headless self-test of the integration: `nvim --headless -l ~/.ijfmt/nvim/tests/smoke.lua`
+Headless self-test of the integration: `nvim --headless -l tests/nvim/smoke.lua` in the (built) plugin directory
 (`CONFORM_PATH=/path/to/conform.nvim` to include the conform adapter).
 
 ## Command line
@@ -205,7 +218,8 @@ The daemon listens on `127.0.0.1:<port>`; port and token are in `<state dir>/<ID
 ```
 daemon/       IntelliJ plugin: headless app starter (`ijfmt-server`), formatting pipeline, HTTP API, save vetoer
 cli/          dependency-free Java 17 client: IDE discovery, daemon lifecycle, CLI
-nvim/         Neovim plugin (direct socket client, conform.nvim adapter, headless smoke test)
+lua/ijfmt/    Neovim plugin (direct socket client, conform.nvim adapter, build hook)
+tests/nvim/   headless Neovim smoke test
 conformance/  differential test suite against IntelliJ's command line formatter
 dist/bin/     launcher scripts (ijfmt, ijfmt.cmd)
 ```
